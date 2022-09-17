@@ -13,6 +13,9 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
 
 public class MicrosoftTranslate implements TranslateProvider{
     public static void main(String[] args) throws IOException, InterruptedException {
@@ -25,8 +28,14 @@ public class MicrosoftTranslate implements TranslateProvider{
     public MicrosoftTranslate(String apiKey){
         this.apiKey = apiKey;
     }
+    private static final HashMap<String, Translate.PartOfSpeech> partOfSpeechMapper = new HashMap<>();
+    static{
+        for (Translate.PartOfSpeech partOfSpeech : Translate.PartOfSpeech.values()) {
+            partOfSpeechMapper.put(partOfSpeech.name(), partOfSpeech);
+        }
+    }
     @Override
-    public WordInfo[] getWordTranslates(String word, String wordLanguage, String translateLanguage) {
+    public Translate[] getWordTranslates(String word, String wordLanguage, String translateLanguage) {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("https://microsoft-translator-text.p.rapidapi.com/Dictionary/Lookup?from=" + wordLanguage+ "&api-version=3.0&to="+translateLanguage))
                 .header("content-type", "application/json")
@@ -39,14 +48,20 @@ public class MicrosoftTranslate implements TranslateProvider{
             String responseString = response.body();
             System.out.println(responseString);
             JSONArray translations = new JSONArray(responseString).getJSONObject(0).getJSONArray("translations");
-            //fixme add parsing translation object
+            Translate[] translates = new Translate[translations.length()];
+            for (int i = 0; i < translations.length(); i++){
+                JSONObject translateJSON = translations.getJSONObject(i);
+                translates[i] = new Translate(
+                        convertPartOfSpeechNameToPartOfSpeech(translateJSON.getString("posTag")),
+                        translateJSON.getString("normalizedTarget"),
+                        translateJSON.getDouble("confidence")
+                );
+            }
+            return translates;
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
-
-        return null;
     }
-
     @Override
     public String translatePhrase(String phrase, String phraseLanguage, String translateLanguage) {
         HttpRequest request = HttpRequest.newBuilder()
@@ -73,12 +88,12 @@ public class MicrosoftTranslate implements TranslateProvider{
             if(!detectedLanguage.equals(phraseLanguage))
                 throw new DetectedAndGivenLanguageNotEqualException(detectedLanguage, phraseLanguage);
             return new JSONArray(response.body()).getJSONObject(0).getJSONArray("translations").getJSONObject(0).getString("text");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
 
     }
-
+    private static Translate.PartOfSpeech convertPartOfSpeechNameToPartOfSpeech(String partOfSpeechName){
+        return partOfSpeechMapper.get(partOfSpeechName);
+    }
 }

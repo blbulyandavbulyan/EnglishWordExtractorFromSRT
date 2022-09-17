@@ -8,6 +8,6 @@ import java.util.List;
 import java.util.Set;
 
 public interface TranslateProvider {
-    WordInfo[] getWordTranslates(String word, String wordLanguage, String translateLanguage) throws TranslatorException;
+    Translate[] getWordTranslates(String word, String wordLanguage, String translateLanguage) throws TranslatorException;
     String translatePhrase(String phrase, String phraseLanguage, String translateLanguage) throws TranslatorException;
 }

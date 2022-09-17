@@ -1,6 +1,6 @@
 package translategetter;
 
-public class Translate {
+public record Translate(translategetter.Translate.PartOfSpeech partOfSpeech, String translate, double confidence) {
     public enum PartOfSpeech {
         ADJ,
         ADV,
@@ -12,20 +12,5 @@ public class Translate {
         PRON,
         VERB,
         OTHER
-    }
-    private final PartOfSpeech partOfSpeech;
-    private final String translate;
-
-    public Translate(PartOfSpeech partOfSpeech, String translate) {
-        this.partOfSpeech = partOfSpeech;
-        this.translate = translate;
-    }
-
-    public PartOfSpeech getPartOfSpeech() {
-        return partOfSpeech;
-    }
-
-    public String getTranslate() {
-        return translate;
     }
 }
