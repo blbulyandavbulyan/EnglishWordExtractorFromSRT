@@ -1,20 +1,23 @@
 package translategetter;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import translategetter.exceptions.DetectedAndGivenLanguageNotEqualException;
+import translategetter.exceptions.InvalidStatusCode;
+import wordinfogenerator.WordInfo;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.List;
+import java.util.ArrayList;
 
 public class MicrosoftTranslate implements TranslateProvider{
     public static void main(String[] args) throws IOException, InterruptedException {
         MicrosoftTranslate microsoftTranslate = new MicrosoftTranslate("739f0d0146msh7cc406a9f7c0d10p1f79c6jsn56e503cd2739");
-        for (String translatedWord : microsoftTranslate.getWordTranslates("end", "en", "ru")) {
+        for (var translatedWord : microsoftTranslate.getWordTranslates("end", "en", "ru")) {
             System.out.println(translatedWord);
         }
     }
@@ -23,7 +26,7 @@ public class MicrosoftTranslate implements TranslateProvider{
         this.apiKey = apiKey;
     }
     @Override
-    public List<String> getWordTranslates(String word, String wordLanguage, String translateLanguage) {
+    public WordInfo[] getWordTranslates(String word, String wordLanguage, String translateLanguage) {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("https://microsoft-translator-text.p.rapidapi.com/Dictionary/Lookup?from=" + wordLanguage+ "&api-version=3.0&to="+translateLanguage))
                 .header("content-type", "application/json")
@@ -33,10 +36,11 @@ public class MicrosoftTranslate implements TranslateProvider{
                 .build();
         try {
             HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
-            System.out.println(response.body());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
+            String responseString = response.body();
+            System.out.println(responseString);
+            JSONArray translations = new JSONArray(responseString).getJSONObject(0).getJSONArray("translations");
+            //fixme add parsing translation object
+        } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
 
@@ -54,9 +58,17 @@ public class MicrosoftTranslate implements TranslateProvider{
                 .build();
         try {
             HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+            if(response.statusCode() != 200){
+                try{
+                    JSONObject errorObject = new JSONObject(response.body()).getJSONObject("error");
+                    throw new InvalidStatusCode(response.statusCode(), errorObject.getInt("code"), errorObject.getString("message"));
+                }
+                catch (JSONException e){
+                    throw new InvalidStatusCode(response.statusCode(), null, null);
+                }
+            }
             System.out.println(response.body());
             JSONArray jsonArray = new JSONArray(response.body());
-
             String detectedLanguage = jsonArray.getJSONObject(0).getJSONObject("detectedLanguage").getString("language");
             if(!detectedLanguage.equals(phraseLanguage))
                 throw new DetectedAndGivenLanguageNotEqualException(detectedLanguage, phraseLanguage);
