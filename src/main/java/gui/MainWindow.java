@@ -1,6 +1,11 @@
 package gui;
 
+import jtablereflection.TableReflectionModel;
+import translategetter.MicrosoftTranslate;
+import wordextractor.MinimalWordInfo;
 import wordextractor.WordExtractor;
+import wordinfogenerator.WordInfo;
+import wordinfogenerator.WordInfoGenerator;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -12,9 +17,11 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.function.Predicate;
 
 public class MainWindow extends JFrame {
+
     private final MainWindow me;
     private File[] exceptionWordsFiles;
     private File[] subTitleFiles;
@@ -22,12 +29,16 @@ public class MainWindow extends JFrame {
     private  JTable[] tables;
     private final Clipboard systemClipBoard;
     private final ResourceBundle rb;
+    private final WordInfoGenerator wordInfoGenerator;
+    private boolean needTranslate = false;
     public MainWindow(){
         rb = ResourceBundle.getBundle("locales/guitext");
+        wordInfoGenerator = new WordInfoGenerator(new MicrosoftTranslate("739f0d0146msh7cc406a9f7c0d10p1f79c6jsn56e503cd2739"), "mainWindow.table.cellValues.partOfSpeech", rb);
         me = this;
         systemClipBoard = getSystemClipboard();
         this.getContentPane().add(createContentPane());
         this.setJMenuBar(createRootJMenuBar());
+        this.setTitle(rb.getString("mainWindow.title"));
         this.pack();
     }
     private JMenuBar createRootJMenuBar(){
@@ -91,10 +102,23 @@ public class MainWindow extends JFrame {
                 if(subTitleFiles != null && subTitleFiles.length > 0){
                     tables = new JTable[subTitleFiles.length];
                     for (int i = 0; i < subTitleFiles.length; i++) {
-                        var extractedWordsAndCountRepeats = new WordExtractor(subTitleFiles[i], englishWordPredicate, exceptionWords).getWordsAndCountRepeats();
-                        JTable jTable = fillTable(extractedWordsAndCountRepeats);
-                        subTitleFilesTabPane.addTab(subTitleFiles[i].getName(), new JScrollPane(jTable));
-                        tables[i] = jTable;
+                        var minimalWordInfos = new WordExtractor(subTitleFiles[i], englishWordPredicate, exceptionWords).getWordsAndCountRepeats();
+                        JTable wordsTable = new Callable<JTable>(){
+                            @Override
+                            public JTable call(){
+                                if(needTranslate){
+                                    //return fillAndCreateTable()
+                                    //fixme
+                                    return null;
+                                }
+                                else {
+                                    return fillAndCreateTable(minimalWordInfos, MinimalWordInfo.class);
+                                }
+                            }
+                        }.call();
+
+                        subTitleFilesTabPane.addTab(subTitleFiles[i].getName(), new JScrollPane(wordsTable));
+                        tables[i] = wordsTable;
                     }
                     copyWordsFromThisFile.setEnabled(true);
                     copyWordsFromAllFiles.setEnabled(true);
@@ -103,6 +127,8 @@ public class MainWindow extends JFrame {
 
             }
             catch (IOException ex) {
+                throw new RuntimeException(ex);
+            } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }
 
@@ -137,15 +163,8 @@ public class MainWindow extends JFrame {
         contentPane.add(subTitleFilesTabPane, BorderLayout.CENTER);
         return contentPane;
     }
-    private JTable fillTable(Map<String, Integer> extractedWords) {
-        Object[][] tableData = extractedWords.entrySet().stream().sorted(Comparator.comparingInt(Map.Entry::getValue)).map(value -> {
-            Object[] kv = new Object[2];
-            kv[0] = value.getKey();
-            kv[1] = value.getValue();
-            return kv;
-        }).toArray(Object[][]::new);
-        String[] tableColumns = {"Слово", "Количество повторений"};
-        JTable jTable = new JTable(tableData, tableColumns);
+    private <T extends MinimalWordInfo> JTable fillAndCreateTable(T []wordInfos, Class<T> wordInfoType) {
+        JTable jTable = new JTable(new TableReflectionModel<>(wordInfos, wordInfoType, rb));
         jTable.setAutoCreateRowSorter(true);
         return jTable;
     }

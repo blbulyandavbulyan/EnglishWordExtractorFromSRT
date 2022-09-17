@@ -13,4 +13,9 @@ public record Translate(translategetter.Translate.PartOfSpeech partOfSpeech, Str
         VERB,
         OTHER
     }
+
+    @Override
+    public String toString() {
+        return translate;
+    }
 }

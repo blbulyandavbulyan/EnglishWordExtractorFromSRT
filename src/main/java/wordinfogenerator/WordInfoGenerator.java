@@ -1,8 +1,8 @@
 package wordinfogenerator;
 
-import org.json.JSONObject;
 import translategetter.Translate.PartOfSpeech;
 import translategetter.TranslateProvider;
+import wordextractor.MinimalWordInfo;
 
 import java.util.*;
 
@@ -17,10 +17,10 @@ public class WordInfoGenerator {
         }
 
     }
-    public List<WordInfo> generateWordInfos(Collection<MinimalWordInfo> minimalWordInfos){
-        List<WordInfo> wordInfos = new LinkedList<>();
+    public WordInfo[] generateWordInfos(Collection<MinimalWordInfo> minimalWordInfos){
+        WordInfo[] wordInfos = new WordInfo[minimalWordInfos.size()];
         for (MinimalWordInfo minimalWordInfo : minimalWordInfos) {
-
+            //translateProvider.
         }
         return wordInfos;
     }

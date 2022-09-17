@@ -1,4 +1,4 @@
-package wordinfogenerator;
+package wordextractor;
 
 import jtablereflection.annotations.ReflectionTable;
 import jtablereflection.annotations.ReflectionTableColumn;

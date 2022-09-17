@@ -2,6 +2,7 @@ package jtablereflection;
 
 import jtablereflection.annotations.ReflectionTable;
 import jtablereflection.annotations.ReflectionTableColumn;
+import jtablereflection.exceptions.AddedContentIsNullException;
 import jtablereflection.exceptions.invalidprovidedclass.ClassMustBeAnnotatedReflectionTableException;
 import jtablereflection.exceptions.invalidprovidedclass.ClassMustHaveOneOrMoreAnnotatedTheColumnAnnotationException;
 import jtablereflection.exceptions.invalidfield.InvalidColumnIndexException;
@@ -12,15 +13,17 @@ import java.lang.reflect.Field;
 import java.util.*;
 
 public class TableReflectionModel<T> extends AbstractTableModel {
-    private final Class<T> storedObjectType;
-    private final Hashtable<Integer, T> storedData = new Hashtable<>();
-    private final String[] columnNames;
-    private final Field[] columnFields;
+    final Class<T> storedObjectType;
+    final T[] storedData;
+    final String[] columnNames;
+    final Field[] columnFields;
     public TableReflectionModel(T[] addedContent, Class<T> storedObjectType, ResourceBundle rb){
+        if(addedContent == null)throw new AddedContentIsNullException();
         this.storedObjectType = storedObjectType;
+        this.storedData = addedContent;
         ReflectionTable reflectionTable =storedObjectType.getAnnotation(ReflectionTable.class);
         if(reflectionTable != null){
-            Field[] annotatedFields = Arrays.stream(storedObjectType.getFields())
+            Field[] annotatedFields = Arrays.stream(storedObjectType.getDeclaredFields())
                     .filter(field -> field.isAnnotationPresent(ReflectionTableColumn.class))
                     .toArray(Field[]::new);
             if(annotatedFields.length > 0){
@@ -33,11 +36,9 @@ public class TableReflectionModel<T> extends AbstractTableModel {
                         else usedIndexes.add(columnIndex);
                     }
                     columnFields = Arrays.stream(annotatedFields).sorted(Comparator.comparingInt(value -> value.getAnnotation(ReflectionTableColumn.class).preferredColumnIndex())).toArray(Field[]::new);
-                    for (int i = 0; i < addedContent.length; i++){
-                        storedData.put(i, addedContent[i]);
-                    }
                 }
                 else columnFields = annotatedFields;
+                Arrays.stream(columnFields).forEach(field -> field.setAccessible(true));
                 columnNames = new String[columnFields.length];
                 for (int i = 0; i < columnNames.length; i++) {
                     columnNames[i] = rb.getString(columnFields[i].getAnnotation(ReflectionTableColumn.class).columnNamePropertiesKey());
@@ -51,7 +52,7 @@ public class TableReflectionModel<T> extends AbstractTableModel {
     }
     @Override
     public int getRowCount() {
-        return storedData.size();
+        return storedData.length;
     }
 
     @Override
@@ -70,12 +71,11 @@ public class TableReflectionModel<T> extends AbstractTableModel {
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
         try {
-            return columnFields[columnIndex].get(storedData.get(rowIndex));
+            return columnFields[columnIndex].get(storedData[rowIndex]);
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }
     }
-
     public Class<T> getStoredObjectType() {
         return storedObjectType;
     }

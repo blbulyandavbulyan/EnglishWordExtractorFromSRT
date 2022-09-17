@@ -2,9 +2,10 @@ package wordinfogenerator;
 
 import jtablereflection.annotations.ReflectionTable;
 import jtablereflection.annotations.ReflectionTableColumn;
+import wordextractor.MinimalWordInfo;
 
 @ReflectionTable
-public class WordInfo extends MinimalWordInfo{
+public class WordInfo extends MinimalWordInfo {
     @ReflectionTableColumn(columnNamePropertiesKey = "wordInfo.columnNames.translate")
     protected final String translate;
     @ReflectionTableColumn(columnNamePropertiesKey = "wordInfo.columnNames.partOfSpeech")

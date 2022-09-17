@@ -13,7 +13,7 @@ public class WordExtractor {
         this.isValidChar = isValidChar;
         this.exceptionWords = exceptionWords;
     }
-    public Map<String, Integer> getWordsAndCountRepeats() throws IOException {
+    public MinimalWordInfo[] getWordsAndCountRepeats() throws IOException {
         BufferedInputStream bufferedInputStream = new BufferedInputStream(new FileInputStream(fileForExtractWords));
         StringBuilder wordBuilder = new StringBuilder();
         Map<String, Integer> words = new HashMap<>();
@@ -30,8 +30,9 @@ public class WordExtractor {
                 wordBuilder.setLength(0);
             }
         }
+
         bufferedInputStream.close();
-        return words;
+        return words.entrySet().stream().map(entry-> new MinimalWordInfo(entry.getKey(), entry.getValue())).toArray(MinimalWordInfo[]::new);
     }
     public Set<String> getWords() throws IOException {
         BufferedInputStream bufferedInputStream = new BufferedInputStream(new FileInputStream(fileForExtractWords));
