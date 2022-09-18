@@ -1,0 +1,4 @@
+package wordprocessing.wordinfogenerator.exceptions;
+
+public class TranslatesLengthIsNotEqualToPartsOfSpeechLength extends WordInfoCreationException{
+}

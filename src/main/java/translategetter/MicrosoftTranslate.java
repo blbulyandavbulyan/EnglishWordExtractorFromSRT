@@ -6,7 +6,6 @@ import org.json.JSONObject;
 import translategetter.exceptions.DetectedAndGivenLanguageNotEqualException;
 import translategetter.exceptions.InvalidStatusCode;
 import translategetter.exceptions.TranslatorException;
-import wordinfogenerator.WordInfo;
 
 import java.io.IOException;
 import java.net.URI;
