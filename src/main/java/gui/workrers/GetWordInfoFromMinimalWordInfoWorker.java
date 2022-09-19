@@ -10,9 +10,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 public class GetWordInfoFromMinimalWordInfoWorker extends SwingWorker<WordInfo[], Object> {
-    private final MinimalWordInfo[] minimalWordInfos;
+    private MinimalWordInfo[] minimalWordInfos;
     private final TranslateProvider translateProvider;
-    private HashMap<Translate.PartOfSpeech, String> localizedPartOfSpeechNames;
+    private final HashMap<Translate.PartOfSpeech, String> localizedPartOfSpeechNames;
 
     public GetWordInfoFromMinimalWordInfoWorker(MinimalWordInfo[] minimalWordInfos, TranslateProvider translateProvider, HashMap<Translate.PartOfSpeech, String> localizedPartOfSpeechNames) {
         this.minimalWordInfos = minimalWordInfos;
@@ -21,7 +21,7 @@ public class GetWordInfoFromMinimalWordInfoWorker extends SwingWorker<WordInfo[]
     }
 
     @Override
-    protected WordInfo[] doInBackground() throws Exception {
+    protected WordInfo[] doInBackground() {
         WordInfo[] wordInfos = new WordInfo[minimalWordInfos.length];
         for (int i = 0; i < wordInfos.length; i++) {
             Translate[] translates = translateProvider.getWordTranslates(minimalWordInfos[i].getWord(), "en", "ru");
@@ -29,5 +29,8 @@ public class GetWordInfoFromMinimalWordInfoWorker extends SwingWorker<WordInfo[]
             setProgress((int)Math.round((double) ((i+1)*100)/wordInfos.length));
         }
         return wordInfos;
+    }
+    public void setMinimalWordInfos(MinimalWordInfo[] minimalWordInfos) {
+        this.minimalWordInfos = minimalWordInfos;
     }
 }
