@@ -30,7 +30,9 @@ public class WordInfo extends MinimalWordInfo {
         this.translates = translates;
         this.partsOfSpeech = partsOfSpeech;
     }
-    //public WordInfo(MinimalWordInfo minimalWordInfo, String[] translates, )
+    public WordInfo(MinimalWordInfo minimalWordInfo, String[] translates, String[] partsOfSpeech){
+        this(minimalWordInfo.word, minimalWordInfo.countOfRepeats, translates, partsOfSpeech);
+    }
     public String[] getTranslates() {
         return translates;
     }

@@ -1,5 +1,7 @@
 package translategetter;
 
+import java.util.HashMap;
+
 public record Translate(translategetter.Translate.PartOfSpeech partOfSpeech, String translate, double confidence) {
     public enum PartOfSpeech {
         ADJ,
@@ -13,7 +15,6 @@ public record Translate(translategetter.Translate.PartOfSpeech partOfSpeech, Str
         VERB,
         OTHER
     }
-
     @Override
     public String toString() {
         return translate;
