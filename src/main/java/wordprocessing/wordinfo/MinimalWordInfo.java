@@ -8,7 +8,7 @@ public class MinimalWordInfo {
     @ReflectionTableColumn(columnNamePropertiesKey = "minimalWordInfo.columnNames.word")
     protected final String word;
     @ReflectionTableColumn(columnNamePropertiesKey = "minimalWordInfo.columnNames.countOfRepeats")
-    protected final long countOfRepeats;
+    protected final Long countOfRepeats;
 //    @ReflectionTableColumn(columnNamePropertiesKey = "minimalWordInfo.columnNames.countOfRepeats")
 //    protected final String[] testArray = {"Тест", "Тест2", "Тест3"};
     public MinimalWordInfo(String word, long countOfRepeats) {

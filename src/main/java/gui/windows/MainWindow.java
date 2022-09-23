@@ -3,20 +3,13 @@ package gui.windows;
 import gui.jtablereflection.JReflectionTable;
 import gui.workrers.ExtractExceptionWordsFromFilesWorker;
 import gui.workrers.ExtractWordsFromFilesWorker;
-import gui.workrers.GetWordInfoFromMinimalWordInfoWorker;
-import translategetter.MicrosoftTranslate;
-import translategetter.Translate;
-import translategetter.TranslateProvider;
 import wordprocessing.wordinfo.MinimalWordInfo;
-import wordprocessing.wordinfo.WordInfo;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
@@ -25,8 +18,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 
 public class MainWindow extends JFrame {
-    private final HashMap<Translate.PartOfSpeech, String> localizedPartOfSpeechesNames = new HashMap<>();
-    private final static String partOfSpeechRbPrefix = "mainWindow.table.cellValues.partOfSpeech";
     private final MainWindow me;
     private final JPanel contentJPanel;
 
@@ -40,12 +31,10 @@ public class MainWindow extends JFrame {
     private final JButton extractWordsFromSrtFiles;
     private final JMenu jFileMenu;
     private final JFileChooser jFileChooser = new JFileChooser();
-    private boolean needTranslate = false;
     private final JScrollPane jScrollPane;
     private JTable displayTable;
     private File[] exceptionWordsFiles;
     private File[] subTitleFiles;
-    private final TranslateProvider translateProvider;
 
     public MainWindow(){
         jScrollPane = new JScrollPane();
@@ -60,10 +49,11 @@ public class MainWindow extends JFrame {
         extractWordsFromSrtFiles = new JButton(rb.getString("mainWindow.button.extractWords"));
         jFileMenu = new JMenu(rb.getString("mainWindow.menu.File"));
         this.setTitle(rb.getString("mainWindow.title"));
-        for (Translate.PartOfSpeech partOfSpeech : Translate.PartOfSpeech.values()) {
-            localizedPartOfSpeechesNames.put(partOfSpeech, rb.getString(String.format("%s.%s", partOfSpeechRbPrefix, partOfSpeech.name())));
-        }
-        translateProvider = new MicrosoftTranslate("739f0d0146msh7cc406a9f7c0d10p1f79c6jsn56e503cd2739");
+
+        //fixme add api key to settings dialog
+        //delete this repository and its copy on github, after creation settings dialog
+        //then create repository here again
+
         systemClipBoard = getSystemClipboard();
         contentJPanel = createRootJPanel();
         initButtonListeners();
@@ -76,13 +66,10 @@ public class MainWindow extends JFrame {
         {
             JMenuItem jExportWordsFromThisFileToAnotherFile = new JMenuItem(rb.getString("mainWindow.menu.File.exportWordsFromThisFileToAnotherFile"));
             JMenuItem jExportWordsFromAllFilesToOneFile = new JMenuItem(rb.getString("mainWindow.menu.File.exportWordsFromAllFilesToAnotherFile"));
-            JCheckBoxMenuItem jEnableTranslateWhenImportWords = new JCheckBoxMenuItem(rb.getString("mainWindow.menu.File.enableTranslateWhenImportFile"));
-            jEnableTranslateWhenImportWords.addItemListener(e -> needTranslate = e.getStateChange() == ItemEvent.SELECTED);
             jFileMenu.add(jExportWordsFromThisFileToAnotherFile);
             jFileMenu.addSeparator();
             jFileMenu.add(jExportWordsFromAllFilesToOneFile);
             jFileMenu.addSeparator();
-            jFileMenu.add(jEnableTranslateWhenImportWords);
         }
         jMenuBar.add(jFileMenu);
         return jMenuBar;
@@ -121,7 +108,6 @@ public class MainWindow extends JFrame {
             Predicate<Character> englishWordPredicate = (character -> (character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z'));
             ExtractExceptionWordsFromFilesWorker extractExceptionWordsFromFilesWorker = new ExtractExceptionWordsFromFilesWorker(exceptionWordsFiles, englishWordPredicate);
             ExtractWordsFromFilesWorker extractWordsFromFilesWorker = new ExtractWordsFromFilesWorker(subTitleFiles, null, englishWordPredicate);
-            GetWordInfoFromMinimalWordInfoWorker getWordInfoFromMinimalWordInfoWorker = new GetWordInfoFromMinimalWordInfoWorker(null, translateProvider, localizedPartOfSpeechesNames);
             PropertyChangeListener propertyChangeListener = evt -> {
                 Object propertyValue = evt.getNewValue();
                 Object source = evt.getSource();
@@ -138,7 +124,6 @@ public class MainWindow extends JFrame {
                                 jProgressBar.setString(rb.getString("mainWindow.progressBar.readingSrtFiles"));
                                 jProgressBar.setValue(0);
                             }
-                            else if(source == getWordInfoFromMinimalWordInfoWorker)jProgressBar.setString(rb.getString("mainWindow.progressBar.gettingTranslates"));
                         }
                         else if(propertyValue == SwingWorker.StateValue.DONE){
                             try{
@@ -149,18 +134,7 @@ public class MainWindow extends JFrame {
                                 else if(source == extractWordsFromFilesWorker){
                                     setCursor(Cursor.getDefaultCursor());
                                     MinimalWordInfo[] minimalWordInfos = extractWordsFromFilesWorker.get();
-                                    if(needTranslate){
-                                        getWordInfoFromMinimalWordInfoWorker.setMinimalWordInfos(minimalWordInfos);
-                                        getWordInfoFromMinimalWordInfoWorker.execute();
-                                    }
-                                    else {
-                                        fillAndDisplayTable(minimalWordInfos);
-                                        jProgressBar.setString(rb.getString("mainWindow.progressBar.completed"));
-                                        setEnableControlElements(true);
-                                    }
-                                }
-                                else if(source == getWordInfoFromMinimalWordInfoWorker){
-                                    fillAndDisplayTable(getWordInfoFromMinimalWordInfoWorker.get());
+                                    fillAndDisplayTable(minimalWordInfos);
                                     jProgressBar.setString(rb.getString("mainWindow.progressBar.completed"));
                                     setEnableControlElements(true);
                                 }
@@ -175,7 +149,6 @@ public class MainWindow extends JFrame {
             };
             extractExceptionWordsFromFilesWorker.addPropertyChangeListener(propertyChangeListener);
             extractWordsFromFilesWorker.addPropertyChangeListener(propertyChangeListener);
-            getWordInfoFromMinimalWordInfoWorker.addPropertyChangeListener(propertyChangeListener);
             if(exceptionWordsFiles != null)extractExceptionWordsFromFilesWorker.execute();
             else extractWordsFromFilesWorker.execute();
         });
@@ -206,11 +179,6 @@ public class MainWindow extends JFrame {
     }
     private void fillAndDisplayTable(MinimalWordInfo[] minimalWordInfos){
         JTable jTable = new JReflectionTable<>(minimalWordInfos,  MinimalWordInfo.class, MinimalWordInfo.class, rb);
-        jTable.setAutoCreateRowSorter(true);
-        replaceDisplayJTable(jTable);
-    }
-    private void fillAndDisplayTable(WordInfo[] wordInfos){
-        JTable jTable = new JReflectionTable<>(wordInfos,  WordInfo.class, MinimalWordInfo.class, rb);
         jTable.setAutoCreateRowSorter(true);
         replaceDisplayJTable(jTable);
     }
