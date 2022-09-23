@@ -3,6 +3,7 @@ package gui.windows;
 import gui.jtablereflection.JReflectionTable;
 import gui.workrers.ExtractExceptionWordsFromFilesWorker;
 import gui.workrers.ExtractWordsFromFilesWorker;
+import jtabletocsvexporter.JTableToCSVFileExporter;
 import wordprocessing.wordinfo.MinimalWordInfo;
 
 import javax.swing.*;
@@ -10,9 +11,11 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
-import java.awt.event.ItemEvent;
 import java.beans.PropertyChangeListener;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
@@ -32,6 +35,8 @@ public class MainWindow extends JFrame {
     private final JMenu jFileMenu;
     private final JFileChooser jFileChooser = new JFileChooser();
     private final JScrollPane jScrollPane;
+    private final JMenuItem jExportWordsToFile;
+    private final JMenuItem jExportWordsAndCountOfRepeatsToCSVTable;
     private JTable displayTable;
     private File[] exceptionWordsFiles;
     private File[] subTitleFiles;
@@ -42,21 +47,18 @@ public class MainWindow extends JFrame {
         rb = ResourceBundle.getBundle("locales/guitext");
         jProgressBar = new JProgressBar(0, 100);
         jProgressBar.setStringPainted(true);
-
         selectSrtFileButton = new JButton(rb.getString("mainWindow.button.selectSubTitleFiles"));
         copyWords = new JButton(rb.getString("mainWindow.button.copyWords"));
         selectExceptionWordsFileButton = new JButton(rb.getString("mainWindow.button.selectExceptionWordsFiles"));
         extractWordsFromSrtFiles = new JButton(rb.getString("mainWindow.button.extractWords"));
         jFileMenu = new JMenu(rb.getString("mainWindow.menu.File"));
+        jExportWordsToFile = new JMenuItem(rb.getString("mainWindow.menu.File.exportWordsFromThisFileToAnotherFile"));
+        jExportWordsAndCountOfRepeatsToCSVTable = new JMenuItem(rb.getString("mainWindow.menu.File.exportWordsAndCountOfRepeatsToCSVTable"));
         this.setTitle(rb.getString("mainWindow.title"));
-
-        //fixme add api key to settings dialog
-        //delete this repository and its copy on github, after creation settings dialog
-        //then create repository here again
-
         systemClipBoard = getSystemClipboard();
         contentJPanel = createRootJPanel();
-        initButtonListeners();
+        initControlElementsListeners();
+        disableNotAvailableComponents();
         this.getContentPane().add(contentJPanel);
         this.setJMenuBar(createRootJMenuBar());
         this.pack();
@@ -64,19 +66,19 @@ public class MainWindow extends JFrame {
     private JMenuBar createRootJMenuBar(){
         JMenuBar jMenuBar = new JMenuBar();
         {
-            JMenuItem jExportWordsFromThisFileToAnotherFile = new JMenuItem(rb.getString("mainWindow.menu.File.exportWordsFromThisFileToAnotherFile"));
-            JMenuItem jExportWordsFromAllFilesToOneFile = new JMenuItem(rb.getString("mainWindow.menu.File.exportWordsFromAllFilesToAnotherFile"));
-            jFileMenu.add(jExportWordsFromThisFileToAnotherFile);
+
+            jFileMenu.add(jExportWordsToFile);
             jFileMenu.addSeparator();
-            jFileMenu.add(jExportWordsFromAllFilesToOneFile);
+            jFileMenu.add(jExportWordsAndCountOfRepeatsToCSVTable);
             jFileMenu.addSeparator();
         }
         jMenuBar.add(jFileMenu);
         return jMenuBar;
     }
-    private void initButtonListeners(){
+    private void initControlElementsListeners(){
         FileNameExtensionFilter subRipAndPlainTextFileFilter = new FileNameExtensionFilter("SubRip and Plain text", "srt", "txt");
-        FileNameExtensionFilter exceptionWordsFileFilter = new FileNameExtensionFilter("Plaint text", "txt");
+        FileNameExtensionFilter txtFileFilter = new FileNameExtensionFilter("Plaint text", "txt");
+        File emptyFileForClearJFileChooserSelection = new File("");
         selectSrtFileButton.addActionListener(
                 (l)->{
                     jFileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -95,7 +97,8 @@ public class MainWindow extends JFrame {
                     jFileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
                     jFileChooser.setMultiSelectionEnabled(true);
                     jFileChooser.setDialogTitle("Выберите файл исключаемых слов");
-                    jFileChooser.setFileFilter(exceptionWordsFileFilter);
+                    jFileChooser.resetChoosableFileFilters();
+                    jFileChooser.setFileFilter(txtFileFilter);
                     int result = jFileChooser.showOpenDialog(me);
                     if(result == JFileChooser.APPROVE_OPTION){
                         exceptionWordsFiles = jFileChooser.getSelectedFiles();
@@ -160,11 +163,42 @@ public class MainWindow extends JFrame {
             }
             systemClipBoard.setContents(new StringSelection(stringBuilder.toString()), null);
         });
+        jExportWordsToFile.addActionListener(e -> {
+            jFileChooser.resetChoosableFileFilters();
+            jFileChooser.setFileFilter(txtFileFilter);
+            jFileChooser.setMultiSelectionEnabled(false);
+            if(jFileChooser.showSaveDialog(me) == JFileChooser.APPROVE_OPTION){
+                File fileForSaveWords = jFileChooser.getSelectedFile();
+                try(BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(fileForSaveWords))) {
+                    for (int i = 0; i < displayTable.getRowCount(); i++) {
+                        bufferedWriter.write(displayTable.getValueAt(i, 0).toString());
+                        bufferedWriter.newLine();
+                    }
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+
+            }
+
+        });
+        FileNameExtensionFilter csvFileFilter = new FileNameExtensionFilter("Text CSV", ".csv");
+
+        jExportWordsAndCountOfRepeatsToCSVTable.addActionListener(e -> {
+            jFileChooser.setFileFilter(csvFileFilter);
+            jFileChooser.setMultiSelectionEnabled(false);
+            jFileChooser.setSelectedFile(emptyFileForClearJFileChooserSelection);
+            if(jFileChooser.showSaveDialog(me) == JFileChooser.APPROVE_OPTION){
+                File fileForSavingTable = jFileChooser.getSelectedFile();
+                try {
+                    JTableToCSVFileExporter.exportDataToFile(displayTable, fileForSavingTable);
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        });
     }
     private JPanel createRootJPanel(){
         JPanel contentPane = new JPanel();
-        extractWordsFromSrtFiles.setEnabled(false);
-        copyWords.setEnabled(false);
         contentPane.setLayout(new BorderLayout());
         JToolBar jToolBar = new JToolBar();
         jToolBar.setFloatable(false);
@@ -176,6 +210,12 @@ public class MainWindow extends JFrame {
         contentPane.add(jToolBar, BorderLayout.SOUTH);
         contentPane.add(jProgressBar, BorderLayout.NORTH);
         return contentPane;
+    }
+    public void disableNotAvailableComponents(){
+        extractWordsFromSrtFiles.setEnabled(false);
+        copyWords.setEnabled(false);
+        jExportWordsAndCountOfRepeatsToCSVTable.setEnabled(false);
+        jExportWordsToFile.setEnabled(false);
     }
     private void fillAndDisplayTable(MinimalWordInfo[] minimalWordInfos){
         JTable jTable = new JReflectionTable<>(minimalWordInfos,  MinimalWordInfo.class, MinimalWordInfo.class, rb);
@@ -194,6 +234,8 @@ public class MainWindow extends JFrame {
         selectExceptionWordsFileButton.setEnabled(enable);
         extractWordsFromSrtFiles.setEnabled(enable);
         jFileMenu.setEnabled(enable);
+        jExportWordsAndCountOfRepeatsToCSVTable.setEnabled(enable);
+        jExportWordsToFile.setEnabled(enable);
     }
     private static Clipboard getSystemClipboard()
     {
