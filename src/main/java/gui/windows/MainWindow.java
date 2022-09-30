@@ -27,7 +27,7 @@ public class MainWindow extends JFrame {
     //private final JTabbedPane subTitleFilesTabPane;
     private final JProgressBar jProgressBar = new JProgressBar(0, 100);
     private final Clipboard systemClipBoard;
-    private final ResourceBundle rb = ResourceBundle.getBundle("locales/guitext");
+    private final ResourceBundle rb = ResourceBundle.getBundle("resources/locales/guitext");
     private final JButton  selectSrtFileButton;
     private final JButton copyWords;
     private final JButton selectExceptionWordsFileButton;
