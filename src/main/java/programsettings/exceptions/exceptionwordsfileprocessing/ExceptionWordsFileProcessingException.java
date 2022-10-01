@@ -1,6 +1,6 @@
-package programmsettings.exceptions.exceptionwordsfileprocessing;
+package programsettings.exceptions.exceptionwordsfileprocessing;
 
-import programmsettings.exceptions.MainSettingsException;
+import programsettings.exceptions.MainSettingsException;
 
 import java.io.File;
 
@@ -8,6 +8,7 @@ public class ExceptionWordsFileProcessingException extends MainSettingsException
     protected final File providedFile;
 
     public ExceptionWordsFileProcessingException(File providedFile) {
+        super();
         this.providedFile = providedFile;
     }
 

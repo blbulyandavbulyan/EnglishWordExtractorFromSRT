@@ -1,4 +1,4 @@
-package programmsettings.exceptions.exceptionwordsfileprocessing;
+package programsettings.exceptions.exceptionwordsfileprocessing;
 
 import java.io.File;
 

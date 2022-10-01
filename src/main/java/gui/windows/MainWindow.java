@@ -1,9 +1,11 @@
 package gui.windows;
 
+import gui.dialogs.settings.SettingsDialog;
 import gui.jtablereflection.JReflectionTable;
 import gui.workrers.ExtractExceptionWordsFromFilesWorker;
 import gui.workrers.ExtractWordsFromFilesWorker;
 import jtabletocsvexporter.JTableToCSVFileExporter;
+import programsettings.MainSettings;
 import wordprocessing.wordinfo.MinimalWordInfo;
 
 import javax.swing.*;
@@ -24,63 +26,53 @@ public class MainWindow extends JFrame {
     private final MainWindow me = this;
     private final JPanel contentJPanel;
 
-    //private final JTabbedPane subTitleFilesTabPane;
     private final JProgressBar jProgressBar = new JProgressBar(0, 100);
     private final Clipboard systemClipBoard;
     private final ResourceBundle rb = ResourceBundle.getBundle("resources/locales/guitext");
-    private final JButton  selectSrtFileButton;
-    private final JButton copyWords;
-    private final JButton selectExceptionWordsFileButton;
-    private final JButton extractWordsFromSrtFiles;
-    private final JMenu jFileMenu;
+    private final JButton  selectSrtFileButton = new JButton(rb.getString("mainWindow.button.selectSubTitleFiles"));
+    private final JButton copyWords = new JButton(rb.getString("mainWindow.button.copyWords"));
+    private final JButton selectExceptionWordsFileButton = new JButton(rb.getString("mainWindow.button.selectExceptionWordsFiles"));
+    private final JButton extractWordsFromSrtFiles = new JButton(rb.getString("mainWindow.button.extractWords"));
+    //создание меню "Файл"
+    private final JMenu jFileMenu = new JMenu(rb.getString("mainWindow.menu.File"));
     private final JPopupMenu jWordsTableContextMenu = new JPopupMenu();
     private final JFileChooser jFileChooser = new JFileChooser();
     private final JScrollPane jScrollPane = new JScrollPane();
-    private final JMenuItem jExportWordsToFile;
-    private final JMenuItem jExportWordsAndCountOfRepeatsToCSVTable;
-    private final JMenuItem jExportSelectedWordsInFile;
-    private final JMenuItem jCopySelectedWords;
+    private final JMenuItem jExportWordsToFile = new JMenuItem(rb.getString("mainWindow.menu.File.exportWordsFromThisFileToAnotherFile"));
+    private final JMenuItem jExportWordsAndCountOfRepeatsToCSVTable = new JMenuItem(rb.getString("mainWindow.menu.File.exportWordsAndCountOfRepeatsToCSVTable"));
 
+    //создание контекстного меню для таблицы со словами
+    private final JMenuItem jExportSelectedWordsInFile = new JMenuItem(rb.getString("mainWindow.wordTable.menu.ExportSelectedWordsInFile"));
+    private final JMenuItem jCopySelectedWords = new JMenuItem(rb.getString("mainWindow.wordTable.menu.CopySelectedWords"));
+    private final JMenuItem jSettings = new JMenuItem(rb.getString("mainWindow.menu.File.settings"));
     private JTable displayTable;
     private File[] exceptionWordsFiles;
     private File[] subTitleFiles;
 
 
     public MainWindow(){
-
         jProgressBar.setStringPainted(true);
-        selectSrtFileButton = new JButton(rb.getString("mainWindow.button.selectSubTitleFiles"));
-        copyWords = new JButton(rb.getString("mainWindow.button.copyWords"));
-        selectExceptionWordsFileButton = new JButton(rb.getString("mainWindow.button.selectExceptionWordsFiles"));
-        extractWordsFromSrtFiles = new JButton(rb.getString("mainWindow.button.extractWords"));
-        //создание меню "Файл"
-        jFileMenu = new JMenu(rb.getString("mainWindow.menu.File"));
-        jExportWordsToFile = new JMenuItem(rb.getString("mainWindow.menu.File.exportWordsFromThisFileToAnotherFile"));
-        jExportWordsAndCountOfRepeatsToCSVTable = new JMenuItem(rb.getString("mainWindow.menu.File.exportWordsAndCountOfRepeatsToCSVTable"));
-        jFileMenu.add(jExportWordsToFile);
-        jFileMenu.addSeparator();
-        jFileMenu.add(jExportWordsAndCountOfRepeatsToCSVTable);
-        jFileMenu.addSeparator();
-
-        //создание контекстного меню для таблицы со словами
-        jExportSelectedWordsInFile = new JMenuItem(rb.getString("mainWindow.wordTable.menu.ExportSelectedWordsInFile"));
-        jCopySelectedWords = new JMenuItem(rb.getString("mainWindow.wordTable.menu.CopySelectedWords"));
-        jWordsTableContextMenu.add(jExportSelectedWordsInFile);
-        jWordsTableContextMenu.add(jCopySelectedWords);
-
-
-
         this.setTitle(rb.getString("mainWindow.title"));
         systemClipBoard = getSystemClipboard();
         contentJPanel = createRootJPanel();
+        fillMenus();
         initControlElementsListeners();
         disableNotAvailableComponents();
-
         this.getContentPane().add(contentJPanel);
         this.setJMenuBar(createRootJMenuBar());
         this.pack();
         this.setMinimumSize(new Dimension(this.getWidth(), this.getHeight()+ 200));
         this.setPreferredSize(this.getMinimumSize());
+    }
+    private void fillMenus(){
+        jFileMenu.add(jExportWordsToFile);
+        jFileMenu.addSeparator();
+        jFileMenu.add(jExportWordsAndCountOfRepeatsToCSVTable);
+        jFileMenu.addSeparator();
+        jFileMenu.add(jSettings);
+        jWordsTableContextMenu.add(jExportSelectedWordsInFile);
+        jWordsTableContextMenu.addSeparator();
+        jWordsTableContextMenu.add(jCopySelectedWords);
     }
     private JMenuBar createRootJMenuBar(){
         JMenuBar jMenuBar = new JMenuBar();
@@ -230,6 +222,14 @@ public class MainWindow extends JFrame {
                 }
             }
         });
+        jSettings.addActionListener(e ->{
+            SettingsDialog settingsDialog = new SettingsDialog(exceptionWordsFiles);
+            settingsDialog.setVisible(true);
+            MainSettings mainSettings = settingsDialog.getMainSettings();
+            if(settingsDialog.isOk()){
+                exceptionWordsFiles = mainSettings != null ? mainSettings.getExceptionWordsFiles() : null;
+            }
+        });
     }
     private JPanel createRootJPanel(){
         JPanel contentPane = new JPanel();
@@ -284,6 +284,7 @@ public class MainWindow extends JFrame {
         return defaultToolkit.getSystemClipboard();
     }
     public static void main(String[] args) {
+        System.setProperty("awt.useSystemAAFontSettings","lcd");
         MainWindow mainWindow = new MainWindow();
         mainWindow.setDefaultCloseOperation(EXIT_ON_CLOSE);
         mainWindow.setVisible(true);
