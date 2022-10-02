@@ -23,7 +23,7 @@ public class SettingsDialog extends JDialog {
     private final JList<File> exceptionFilesJList = new JList<>(exceptionFilesListModel);
     private final JButton addFiles = new JButton(rb.getString("settingsDialog.buttons.AddFiles"));
     private final JButton deleteFiles = new JButton(rb.getString("settingsDialog.buttons.DeleteFiles"));
-    private final JButton okButton = new JButton("dialogs.buttons.Ok");
+    private final JButton okButton = new JButton(rb.getString("dialogs.buttons.Ok"));
     private final JButton cancelButton = new JButton(rb.getString("dialogs.buttons.Cancel"));
     private final JFileChooser jFileChooser = new JFileChooser();
     private boolean ok = false;

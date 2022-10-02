@@ -6,7 +6,7 @@ import java.io.File;
 import java.util.Set;
 
 public class MainSettings {
-    private Set<File> exceptionWordsFiles;
+    private final Set<File> exceptionWordsFiles;
 //    public MainSettings(File propertySettingsFile){
 //
 //    }
@@ -19,8 +19,8 @@ public class MainSettings {
         if(exceptionWordsFiles != null){
             if(exceptionWordsFiles.size() > 0){
                 for (File exceptionWordFile : exceptionWordsFiles) {
-                    if(!exceptionWordFile.isFile())throw new GivenExceptionWordsFileIsNotAFileException(exceptionWordFile);
-                    else if(!exceptionWordFile.exists())throw new ExceptionWordsFileNotFoundException(exceptionWordFile);
+                    if(!exceptionWordFile.exists())throw new ExceptionWordsFileNotFoundException(exceptionWordFile);
+                    else if(!exceptionWordFile.isFile())throw new GivenExceptionWordsFileIsNotAFileException(exceptionWordFile);
                     else if(!exceptionWordFile.canRead())throw new CanNotReadExceptionWordFileException(exceptionWordFile);
                     else if(exceptionWordFile.length() == 0)throw new ExceptionWordsFileIsEmptyException(exceptionWordFile);
                 }
@@ -31,7 +31,7 @@ public class MainSettings {
     public Set<File> getExceptionWordsFiles() {
         return exceptionWordsFiles;
     }
-    public void setExceptionWordsFiles(Set<File> exceptionWordsFiles) {
-        this.exceptionWordsFiles = exceptionWordsFiles;
-    }
+//    public void setExceptionWordsFiles(Set<File> exceptionWordsFiles) {
+//        this.exceptionWordsFiles = exceptionWordsFiles;
+//    }
 }

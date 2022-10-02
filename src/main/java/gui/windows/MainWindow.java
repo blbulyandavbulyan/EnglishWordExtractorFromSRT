@@ -357,7 +357,7 @@ public class MainWindow extends JFrame {
 //        UIManager.put("FileChooser.lookInLabelText", "Директория");
 //        UIManager.put("FileChooser.saveInLabelText", "Сохранить в директории");
 //        UIManager.put("FileChooser.folderNameLabelText", "Путь директории");
-        UIManager.getDefaults().addResourceBundle("resources/locales/filechooser");
+        UIManager.getDefaults().addResourceBundle("resources/locales/swingui");
         MainWindow mainWindow = new MainWindow();
         mainWindow.setDefaultCloseOperation(EXIT_ON_CLOSE);
         mainWindow.setVisible(true);
