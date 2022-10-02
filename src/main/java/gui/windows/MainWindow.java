@@ -34,7 +34,7 @@ public class MainWindow extends JFrame {
     private final JProgressBar jProgressBar = new JProgressBar(0, 100);
     private final JTextField searchTextField = new JTextField();
     private final Clipboard systemClipBoard;
-    private final ResourceBundle rb = ResourceBundle.getBundle("resources/locales/guitext");
+    private final static ResourceBundle rb = ResourceBundle.getBundle("resources/locales/guitext");
     private final JButton  selectSrtFileButton = new JButton(rb.getString("mainWindow.button.selectSubTitleFiles"));
     private final JButton copyWords = new JButton(rb.getString("mainWindow.button.copyWords"));
     private final JButton selectExceptionWordsFileButton = new JButton(rb.getString("mainWindow.button.selectExceptionWordsFiles"));
@@ -55,7 +55,9 @@ public class MainWindow extends JFrame {
     private TableRowSorter<TableModel> wordsSorter;
     private Set<File> exceptionWordsFiles = new HashSet<>();
     private File[] subTitleFiles;
-
+    {
+        searchTextField.setToolTipText(rb.getString("mainWindow.tooltips.WriteAWordToSearchIt"));
+    }
 
     public MainWindow(){
         jProgressBar.setStringPainted(true);
@@ -94,7 +96,7 @@ public class MainWindow extends JFrame {
                 (l)->{
                     jFileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
                     jFileChooser.setMultiSelectionEnabled(true);
-                    jFileChooser.setDialogTitle("Выберите файл субтитров");
+                    jFileChooser.setDialogTitle(rb.getString("fileChooser.titles.SelectSubtitleFiles"));
                     jFileChooser.setFileFilter(subRipAndPlainTextFileFilter);
                     int result = jFileChooser.showOpenDialog(me);
                     if(result == JFileChooser.APPROVE_OPTION){
@@ -107,7 +109,7 @@ public class MainWindow extends JFrame {
                 (l)->{
                     jFileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
                     jFileChooser.setMultiSelectionEnabled(true);
-                    jFileChooser.setDialogTitle("Выберите файл исключаемых слов");
+                    jFileChooser.setDialogTitle(rb.getString("fileChooser.titles.SelectExceptionWordsFiles"));
                     jFileChooser.resetChoosableFileFilters();
                     jFileChooser.setFileFilter(txtFileFilter);
                     int result = jFileChooser.showOpenDialog(me);
@@ -334,8 +336,28 @@ public class MainWindow extends JFrame {
         Toolkit defaultToolkit = Toolkit.getDefaultToolkit();
         return defaultToolkit.getSystemClipboard();
     }
+    @SuppressWarnings("SpellCheckingInspection")
     public static void main(String[] args) {
         System.setProperty("awt.useSystemAAFontSettings","lcd");
+        //локализация JFileChooser
+//        UIManager.put("FileChooser.saveButtonText", "Сохранить");
+//        UIManager.put("FileChooser.openButtonText", "Открыть");
+//        UIManager.put("FileChooser.cancelButtonText", "Отмена");
+//        UIManager.put("FileChooser.fileNameLabelText", "Имя файла");
+//        UIManager.put("FileChooser.fileSizeHeaderText", "Размер");
+//        UIManager.put("FileChooser.fileNameHeaderText", "Имя");
+//        UIManager.put("FileChooser.fileDateHeaderText", "Изменён");
+//        UIManager.put("FileChooser.newFolderToolTipText", "Новая папка");
+//        UIManager.put("FileChooser.upFolderToolTipText", "На уровень выше");
+//        UIManager.put("FileChooser.homeFolderToolTipText", "Домашняя папка");
+//        UIManager.put("FileChooser.detailsViewButtonToolTipText", "Детали");
+//        UIManager.put("FileChooser.listViewButtonToolTipText", "Список");
+//        UIManager.put("FileChooser.filesOfTypeLabelText", "Типы файлов");
+//        UIManager.put("FileChooser.acceptAllFileFilterText", "Все файлы");
+//        UIManager.put("FileChooser.lookInLabelText", "Директория");
+//        UIManager.put("FileChooser.saveInLabelText", "Сохранить в директории");
+//        UIManager.put("FileChooser.folderNameLabelText", "Путь директории");
+        UIManager.getDefaults().addResourceBundle("resources/locales/filechooser");
         MainWindow mainWindow = new MainWindow();
         mainWindow.setDefaultCloseOperation(EXIT_ON_CLOSE);
         mainWindow.setVisible(true);

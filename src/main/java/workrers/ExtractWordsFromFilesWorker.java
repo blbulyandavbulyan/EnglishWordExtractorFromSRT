@@ -31,7 +31,7 @@ public class ExtractWordsFromFilesWorker extends SwingWorker<MinimalWordInfo[], 
         StringBuilder wordBuilder = new StringBuilder();
         for (File fileForExtractWords : filesForExtractWords) {
             BufferedInputStream bufferedInputStream = new BufferedInputStream(new FileInputStream(fileForExtractWords));
-            for (int c = bufferedInputStream.read(); c != -1; c = bufferedInputStream.read()){
+            for (int c = bufferedInputStream.read(); c != -1; c = bufferedInputStream.read(), currentReadBytes++){
                 if(isValidChar.test((char)c)){
                     wordBuilder.append((char) c);
                 }
@@ -44,6 +44,7 @@ public class ExtractWordsFromFilesWorker extends SwingWorker<MinimalWordInfo[], 
                     wordBuilder.setLength(0);
                 }
                 setProgress((int)Math.round((double) (currentReadBytes*100)/maxReadBytes));
+                //System.out.println(getProgress());
             }
             bufferedInputStream.close();
         }

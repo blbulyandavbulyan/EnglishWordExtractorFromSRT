@@ -12,17 +12,19 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class SettingsDialog extends JDialog {
+    private final static ResourceBundle rb = ResourceBundle.getBundle("resources/locales/guitext");
     private MainSettings mainSettings;
     private final DefaultListModel<File> exceptionFilesListModel = new DefaultListModel<>();
     private final JList<File> exceptionFilesJList = new JList<>(exceptionFilesListModel);
-    private final JButton addFiles = new JButton("Добавить файлы");
-    private final JButton deleteFiles = new JButton("Удалить файлы");
-    private final JButton okButton = new JButton("Ок");
-    private final JButton cancelButton = new JButton("Отмена");
+    private final JButton addFiles = new JButton(rb.getString("settingsDialog.buttons.AddFiles"));
+    private final JButton deleteFiles = new JButton(rb.getString("settingsDialog.buttons.DeleteFiles"));
+    private final JButton okButton = new JButton("dialogs.buttons.Ok");
+    private final JButton cancelButton = new JButton(rb.getString("dialogs.buttons.Cancel"));
     private final JFileChooser jFileChooser = new JFileChooser();
     private boolean ok = false;
     {
@@ -33,6 +35,7 @@ public class SettingsDialog extends JDialog {
     public SettingsDialog() {
         configureJFileChooser();
         initControlListeners();
+        this.setTitle(rb.getString("settingsDialog.title"));
         this.getContentPane().add(createRootPanel());
         this.pack();
         this.setMinimumSize(new Dimension(this.getWidth(), this.getHeight() + 150));
