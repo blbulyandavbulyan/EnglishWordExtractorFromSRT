@@ -11,6 +11,8 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class SettingsDialog extends JDialog {
@@ -36,10 +38,10 @@ public class SettingsDialog extends JDialog {
         this.setMinimumSize(new Dimension(this.getWidth(), this.getHeight() + 150));
         this.setModal(true);
     }
-    public SettingsDialog(File[] exceptionFiles){
+    public SettingsDialog(Collection<File> exceptionFiles){
         this();
-        if(exceptionFiles != null && exceptionFiles.length > 0){
-            Arrays.stream(exceptionFiles).forEach(file -> {
+        if(exceptionFiles != null && exceptionFiles.size() > 0){
+            exceptionFiles.forEach(file -> {
                 if(!exceptionFilesListModel.contains(file))exceptionFilesListModel.addElement(file);
             });
         }
@@ -81,7 +83,7 @@ public class SettingsDialog extends JDialog {
                         if(exceptionFilesListModel.getSize() > 0){
                             mainSettings = new MainSettings(IntStream.range(0, exceptionFilesListModel.getSize())
                                     .mapToObj(exceptionFilesListModel::getElementAt)
-                                    .toArray(File[]::new));
+                                    .collect(Collectors.toSet()));
                             ok = true;
                             dispose();
                         }

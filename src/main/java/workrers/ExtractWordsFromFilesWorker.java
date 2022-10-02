@@ -1,4 +1,4 @@
-package gui.workrers;
+package workrers;
 
 import wordprocessing.wordinfo.MinimalWordInfo;
 

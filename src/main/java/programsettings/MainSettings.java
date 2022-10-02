@@ -3,20 +3,21 @@ package programsettings;
 import programsettings.exceptions.exceptionwordsfileprocessing.*;
 
 import java.io.File;
+import java.util.Set;
 
 public class MainSettings {
-    private File[] exceptionWordsFiles;
+    private Set<File> exceptionWordsFiles;
 //    public MainSettings(File propertySettingsFile){
 //
 //    }
-    public MainSettings(File[] exceptionWordsFiles) {
+    public MainSettings(Set<File> exceptionWordsFiles) {
         this.exceptionWordsFiles = exceptionWordsFiles;
         selfCheck();
     }
     public void selfCheck(){
         //check exception words files array
         if(exceptionWordsFiles != null){
-            if(exceptionWordsFiles.length > 0){
+            if(exceptionWordsFiles.size() > 0){
                 for (File exceptionWordFile : exceptionWordsFiles) {
                     if(!exceptionWordFile.isFile())throw new GivenExceptionWordsFileIsNotAFileException(exceptionWordFile);
                     else if(!exceptionWordFile.exists())throw new ExceptionWordsFileNotFoundException(exceptionWordFile);
@@ -27,10 +28,10 @@ public class MainSettings {
             else throw new ExceptionFilesArrayIsNotNullAndEmptyException();
         }
     }
-    public File[] getExceptionWordsFiles() {
+    public Set<File> getExceptionWordsFiles() {
         return exceptionWordsFiles;
     }
-    public void setExceptionWordsFiles(File[] exceptionWordsFiles) {
+    public void setExceptionWordsFiles(Set<File> exceptionWordsFiles) {
         this.exceptionWordsFiles = exceptionWordsFiles;
     }
 }

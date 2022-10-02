@@ -2,14 +2,18 @@ package gui.windows;
 
 import gui.dialogs.settings.SettingsDialog;
 import gui.jtablereflection.JReflectionTable;
-import gui.workrers.ExtractExceptionWordsFromFilesWorker;
-import gui.workrers.ExtractWordsFromFilesWorker;
+import workrers.ExtractExceptionWordsFromFilesWorker;
+import workrers.ExtractWordsFromFilesWorker;
 import jtabletocsvexporter.JTableToCSVFileExporter;
 import programsettings.MainSettings;
 import wordprocessing.wordinfo.MinimalWordInfo;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
@@ -19,6 +23,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 
@@ -27,6 +32,7 @@ public class MainWindow extends JFrame {
     private final JPanel contentJPanel;
 
     private final JProgressBar jProgressBar = new JProgressBar(0, 100);
+    private final JTextField searchTextField = new JTextField();
     private final Clipboard systemClipBoard;
     private final ResourceBundle rb = ResourceBundle.getBundle("resources/locales/guitext");
     private final JButton  selectSrtFileButton = new JButton(rb.getString("mainWindow.button.selectSubTitleFiles"));
@@ -46,7 +52,8 @@ public class MainWindow extends JFrame {
     private final JMenuItem jCopySelectedWords = new JMenuItem(rb.getString("mainWindow.wordTable.menu.CopySelectedWords"));
     private final JMenuItem jSettings = new JMenuItem(rb.getString("mainWindow.menu.File.settings"));
     private JTable displayTable;
-    private File[] exceptionWordsFiles;
+    private TableRowSorter<TableModel> wordsSorter;
+    private Set<File> exceptionWordsFiles = new HashSet<>();
     private File[] subTitleFiles;
 
 
@@ -105,7 +112,10 @@ public class MainWindow extends JFrame {
                     jFileChooser.setFileFilter(txtFileFilter);
                     int result = jFileChooser.showOpenDialog(me);
                     if(result == JFileChooser.APPROVE_OPTION){
-                        exceptionWordsFiles = jFileChooser.getSelectedFiles();
+                        File[] selectedExceptionFiles = jFileChooser.getSelectedFiles();
+                        if(selectedExceptionFiles != null && selectedExceptionFiles.length > 0){
+                            exceptionWordsFiles.addAll(List.of(selectedExceptionFiles));
+                        }
                     }
                 }
         );
@@ -156,7 +166,7 @@ public class MainWindow extends JFrame {
             };
             extractExceptionWordsFromFilesWorker.addPropertyChangeListener(propertyChangeListener);
             extractWordsFromFilesWorker.addPropertyChangeListener(propertyChangeListener);
-            if(exceptionWordsFiles != null)extractExceptionWordsFromFilesWorker.execute();
+            if(exceptionWordsFiles != null && exceptionWordsFiles.size() > 0)extractExceptionWordsFromFilesWorker.execute();
             else extractWordsFromFilesWorker.execute();
         });
         copyWords.addActionListener(e -> {
@@ -227,7 +237,37 @@ public class MainWindow extends JFrame {
             settingsDialog.setVisible(true);
             MainSettings mainSettings = settingsDialog.getMainSettings();
             if(settingsDialog.isOk()){
-                exceptionWordsFiles = mainSettings != null ? mainSettings.getExceptionWordsFiles() : null;
+                Set<File> exceptionWordsFromSettings = mainSettings.getExceptionWordsFiles();
+                if(exceptionWordsFromSettings != null && exceptionWordsFromSettings.size() > 0)
+                    exceptionWordsFiles = exceptionWordsFromSettings;
+            }
+        });
+        searchTextField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                String text = searchTextField.getText();
+
+                if (text.trim().length() == 0) {
+                    wordsSorter.setRowFilter(null);
+                } else {
+                    wordsSorter.setRowFilter(RowFilter.regexFilter("(?i)" + text));
+                }
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                String text = searchTextField.getText();
+
+                if (text.trim().length() == 0) {
+                    wordsSorter.setRowFilter(null);
+                } else {
+                    wordsSorter.setRowFilter(RowFilter.regexFilter("(?i)" + text));
+                }
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
             }
         });
     }
@@ -242,7 +282,14 @@ public class MainWindow extends JFrame {
         jToolBar.add(copyWords);
         contentPane.add(jScrollPane, BorderLayout.CENTER);
         contentPane.add(jToolBar, BorderLayout.SOUTH);
-        contentPane.add(jProgressBar, BorderLayout.NORTH);
+        {
+            JPanel progressBarAndSearchFieldPanel = new JPanel();
+            progressBarAndSearchFieldPanel.setLayout(new BoxLayout(progressBarAndSearchFieldPanel, BoxLayout.Y_AXIS));
+            progressBarAndSearchFieldPanel.add(jProgressBar);
+            progressBarAndSearchFieldPanel.add(searchTextField);
+            contentPane.add(progressBarAndSearchFieldPanel, BorderLayout.NORTH);
+        }
+
         return contentPane;
     }
     public void disableNotAvailableComponents(){
@@ -252,6 +299,7 @@ public class MainWindow extends JFrame {
         jExportWordsToFile.setEnabled(false);
         jExportSelectedWordsInFile.setEnabled(false);
         jCopySelectedWords.setEnabled(false);
+        searchTextField.setEnabled(false);
     }
     private void fillAndDisplayTable(MinimalWordInfo[] minimalWordInfos){
         JTable jTable = new JReflectionTable<>(minimalWordInfos,  MinimalWordInfo.class, MinimalWordInfo.class, rb);
@@ -259,6 +307,8 @@ public class MainWindow extends JFrame {
         jTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
         displayTable = jTable;
+        wordsSorter = new TableRowSorter<>(displayTable.getModel());
+        displayTable.setRowSorter(wordsSorter);
         displayTable.getSelectionModel().addListSelectionListener(e -> setEnabledTableContextMenuItems(displayTable.getSelectedRowCount() > 0));
         displayTable.setComponentPopupMenu(jWordsTableContextMenu);
         jScrollPane.setViewportView(displayTable);
@@ -277,6 +327,7 @@ public class MainWindow extends JFrame {
         jFileMenu.setEnabled(enable);
         jExportWordsAndCountOfRepeatsToCSVTable.setEnabled(enable);
         jExportWordsToFile.setEnabled(enable);
+        searchTextField.setEnabled(enable);
     }
     private static Clipboard getSystemClipboard()
     {
